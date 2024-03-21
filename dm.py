@@ -589,7 +589,7 @@ class GaussianDiffusion(nn.Module):
         assert h == img_size and w == img_size, f'height and width of image must be {img_size}'
         t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
 
-        img = normalize_to_neg_one_to_one(img)
+        # img = normalize_to_neg_one_to_one(img)
         return self.p_losses(img, t, *args, **kwargs)
 
 class Trainer(object):
@@ -724,7 +724,7 @@ class Trainer(object):
             
     def train_loop(self, imgs, masks):
         with torch.no_grad():
-            imgs=self.vae.module.encode(imgs).latent_dist.sample()/50
+            imgs=self.vae.encode(imgs).latent_dist.sample()/50
 
         with self.accelerator.autocast():
             loss = self.model(img=imgs,classes=masks)

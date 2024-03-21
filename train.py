@@ -1,10 +1,11 @@
 from fire import Fire
 import yaml
 from dm import Unet, GaussianDiffusion, Trainer
+from planetAI.src.data.utils import PlanetConfig
 
 def main(
         config_file: str = None,
-        image_size: int = 512,
+        image_size: int = 256,
         dim: int = 256,
         num_classes: int = 10,
         dim_mults: str = '1 2 4',
@@ -12,18 +13,21 @@ def main(
         resnet_block_groups: int = 2,
         block_per_layer: int = 2,
         timesteps: int = 1000,
-        sampling_timesteps: int = 250,
-        batch_size: int = 32,
+        sampling_timesteps: int = 100,
+        batch_size: int = 2,
         lr: float = 1e-4,
         train_num_steps: int = 250000,
         save_sample_every: int = 25000,
         gradient_accumulate_every: int = 1,
         save_loss_every: int = 100,
         num_samples: int = 4,
-        num_workers: int = 32,
+        num_workers: int = 0,
         results_folder: str = './results/run_name',
         milestone: int = None,
+        data_folder: str = '../terrain-ml/planetAI/data'
 ):
+    planet_cfg = PlanetConfig(data_dir=data_folder)
+    num_classes = planet_cfg.combined_classes()
 
     dim_mults=[int(mult) for mult in dim_mults.split(' ')]
 
@@ -61,7 +65,8 @@ def main(
             save_loss_every=save_loss_every,
             num_samples=num_samples,
             num_workers=num_workers,
-            results_folder=results_folder)
+            results_folder=results_folder,
+            data_folder=data_folder)
 
     if milestone:
         trainer.load(milestone)

@@ -16,6 +16,9 @@ import random
 
 from PIL import Image
 
+from planetAI.src.data.dataset import RAMDataset
+from planetAI.src.data.utils import PlanetConfig
+
 join=os.path.join
 
 root_path='working/dir/'
@@ -262,16 +265,16 @@ def import_dataset(
         **kwargs
 ):
     # Generate the dataset CSV file if it does not exist
-    if not os.path.exists(join(data_path, "dataset.csv")) or force:
-        create_dataset_csv(data_path=data_path, threshold=threshold)
+    # if not os.path.exists(join(data_path, "dataset.csv")) or force:
+    #     create_dataset_csv(data_path=data_path, threshold=threshold)
 
-    train_dict, test_dict = split_dataset(data_path, train_size=0.9)
+    # train_dict, test_dict = split_dataset(data_path, train_size=0.9)
 
     # Create the train and test datasets
-    train_set = DatasetLung(data_path=data_path, data_dict=train_dict, 
+    train_set = DatasetPlanet(data_path=data_path, train_mode=True, 
                             subclasses=subclasses, cond_drop_prob=cond_drop_prob,
                             transform=transform)
-    test_set = DatasetLung(data_path=data_path, data_dict=test_dict, 
+    test_set = DatasetPlanet(data_path=data_path, train_mode=False, 
                            subclasses=subclasses, cond_drop_prob=1.,
                            transform=transform)
 
@@ -282,43 +285,48 @@ def import_dataset(
     return train_loader, test_loader
 
 
-class DatasetLung(Dataset):
+class DatasetPlanet(Dataset):
     def __init__(self,
             data_path: str,
-            data_dict: dict,
+            train_mode: bool = True,
             subclasses: list = None,
             cond_drop_prob: float = 0.5,
             extra_unknown_data_path: list = ['unlabelled/data/path1','unlabelled/data/path2',...],
             transform = None):
+        
+        planet_cfg = PlanetConfig(data_dir=data_path)
 
-        if subclasses:
-            data_dict = self._subclasses(data_dict,subclasses)
+        self.ram_dataset = RAMDataset(planet_cfg, 4, 5, mode='train' if train_mode else 'test')
 
-        for extra in extra_unknown_data_path:
-            data_dict = add_unconditional(data_path=extra, 
-                                          data_dict=data_dict, no_check=True)
+        # if subclasses:
+        #     data_dict = self._subclasses(data_dict,subclasses)
 
-        N_classes = len(data_dict)
+        # for extra in extra_unknown_data_path:
+        #     data_dict = add_unconditional(data_path=extra, 
+        #                                   data_dict=data_dict, no_check=True)
+
+        N_classes = (planet_cfg.colours + 1) * (planet_cfg.temp_classes + 1) * (planet_cfg.landcover_classes + 1)
 
         self.data_path = data_path
         self.extra = extra_unknown_data_path
-        self.data_dict = data_dict
-        self.subclasses = subclasses
-        self.cutoffs = self._cutoffs(subclasses,cond_drop_prob)
+        # self.data_dict = data_dict
+        # self.subclasses = subclasses
+        # self.cutoffs = self._cutoffs(subclasses,cond_drop_prob)
         self.N_classes = N_classes
-        self.transform = transform
+        self.transform = T.ToTensor()
 
     def __repr__(self):
         rep = f"{type(self).__name__}: ImageFolderDataset[{self.__len__()}]"
         for n, in range(self.N_classes):
-            rep += f'\nClass {n} has N samples: {len(self.data_dict[n])}\t'
+            rep += f'\nClass {n} has N samples: {0}\t'
         return rep
 
     def __len__(self):
-        counts=0
-        for i in range(len(self.data_dict)):
-            counts+=len(self.data_dict[i])
-        return counts
+        # counts=0
+        # for i in range(len(self.data_dict)):
+        #     counts+=len(self.data_dict[i])
+        # return counts
+        return self.ram_dataset.__len__()
 
     def _subclasses(self, data_dict: dict, subclasses: list):
         not_subclasses = []
@@ -336,9 +344,9 @@ class DatasetLung(Dataset):
         return torch.Tensor(probs).cumsum(dim=0)
 
     def multi_to_single_mask(self, mask):
-        mask=(mask*255).int()
-        mask=torch.where(mask==9,17,mask)
-        mask=torch.where(mask>9,mask-1,mask)
+        # mask=(mask*255).int()
+        # mask=torch.where(mask==9,17,mask)
+        # mask=torch.where(mask>9,mask-1,mask)
         if self.tmp_index==0:
             mask=torch.zeros_like(mask)
         elif self.tmp_index==len(self.subclasses)+1:
@@ -388,11 +396,23 @@ class DatasetLung(Dataset):
 
     def __getitem__(self,idx):
 
-        img, mask = self.unbalanced_data()
+        item = self.ram_dataset[idx]
+        mask = item['combined_sketch']
+        img = item['target_image'][:3]
+        # img = tensor2img(img)
+        img = T.ToPILImage()((img+1.)/2.)
+
+        
+
+        # img, mask = self.unbalanced_data()
 
         if self.transform is not None:
-            img,mask = self.transform((img,mask))
+            img = self.transform(img)
+            mask = self.transform(mask)
 
-        mask = self.multi_to_single_mask(mask)
+        rand_class = torch.randint(0, self.N_classes, (1,))
+        mask = torch.where(mask==rand_class, mask, 0)
+
+        # mask = self.multi_to_single_mask(mask)
 
         return img,mask
