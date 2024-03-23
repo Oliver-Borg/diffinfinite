@@ -5,6 +5,7 @@ from random import random
 from functools import partial
 from collections import namedtuple
 from multiprocessing import cpu_count
+import os
 
 import numpy as np
 import torch
@@ -703,6 +704,8 @@ class Trainer(object):
         torch.save(data, str(self.results_folder / f'model-{milestone}.pt'))
 
     def load(self, milestone):
+        if not os.path.exists(str(self.results_folder / f'model-{milestone}.pt')):
+            return
 
         data = torch.load(str(self.results_folder / f'model-{milestone}.pt'), map_location=self.accelerator.device)
 
@@ -743,18 +746,18 @@ class Trainer(object):
         
         if self.accelerator.is_main_process:
             self.ema.to(self.accelerator.device)
-            self.ema.module.update()
+            self.ema.update()
 
             if self.step != 0 and self.step % self.save_and_sample_every == 0:
-                self.ema.module.ema_model.eval()
+                self.ema.ema_model.eval()
 
                 with torch.no_grad():
                     milestone = self.step // self.save_and_sample_every
                     test_images,test_masks=next(self.test_loader)
-                    z = self.vae.module.encode(
+                    z = self.vae.encode(
                         test_images[:self.num_samples]).latent_dist.sample()/50
-                    z = self.ema.module.ema_model.sample(z,test_masks[:self.num_samples])*50
-                    test_samples=torch.clip(self.vae.module.decode(z).sample,0,1)
+                    z = self.ema.ema_model.sample(z,test_masks[:self.num_samples])*50
+                    test_samples=torch.clip(self.vae.decode(z).sample,0,1)
                     
                 utils.save_image(test_images[:self.num_samples], 
                                  str(self.results_folder / f'images-{milestone}.png'), 
@@ -768,7 +771,7 @@ class Trainer(object):
                                  str(self.results_folder / f'sample-{milestone}.png'), 
                                  nrow = int(math.sqrt(self.num_samples)))
                 
-                self.save(milestone)
+                self.save(0) # Changed this to make sure only one checkpoint file is saved (they are big)
 
     def train(self):
 
