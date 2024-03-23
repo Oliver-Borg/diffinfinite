@@ -14,4 +14,4 @@
 CUDA_VISIBLE_DEVICES=$(ncvd)
 
 module load python/miniconda3-py310
-conda create -y -n diffinf-a100 -f environment.yaml
+conda env create -n diffinf-a100 -f environment.yaml -y
