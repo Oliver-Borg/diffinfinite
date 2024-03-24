@@ -49,10 +49,10 @@ else
 fi
 
 python -m train \
- --batch_size $batch_size \
- --num_workers $batch_size \
- --results_folder $output_dir/diffinfinite \
- --data_folder $data_dir \ 
+ --batch_size=$batch_size \
+ --num_workers=$batch_size \
+ --results_folder=$output_dir/diffinfinite \
+ --data_folder=$data_dir \ 
 
 
 conda deactivate
