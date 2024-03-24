@@ -44,15 +44,15 @@ if [[ $host == *"uct"* ]]; then
     batch_size=4
 else
     output_dir="/mnt/e/brgoli005/planet"
-    data_dir="./planetAI/data/"
+    data_dir="../terrain-ml/planetAI/data/"
     batch_size=2
 fi
 
-python -m train \
- --batch_size=$batch_size \
- --num_workers=$batch_size \
- --results_folder=$output_dir/diffinfinite \
- --data_folder=$data_dir \ 
+# --batch_size=$batch_size --num_workers=$batch_size --results_folder=$output_dir/diffinfinite --data_folder=$data_dir
+args="--batch_size=$batch_size --num_workers=$batch_size --results_folder=$output_dir/diffinfinite --data_folder=$data_dir"
+echo $args
+
+python train.py $args
 
 
 conda deactivate

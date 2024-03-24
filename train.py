@@ -17,7 +17,7 @@ def main(
         batch_size: int = 8,
         lr: float = 1e-4,
         train_num_steps: int = 2500000,
-        save_sample_every: int = 25000,
+        save_sample_every: int = 2500,
         gradient_accumulate_every: int = 1,
         save_loss_every: int = 100,
         num_samples: int = 4,
