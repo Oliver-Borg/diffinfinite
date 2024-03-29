@@ -410,7 +410,8 @@ class DatasetPlanet(Dataset):
             img = self.transform(img)
             mask = self.transform(mask)
 
-        rand_class = torch.randint(0, self.N_classes, (1,))
+        available_classes = torch.unique(mask)
+        rand_class = random.choice(available_classes)
         mask = torch.where(mask==rand_class, mask, 0)
 
         # mask = self.multi_to_single_mask(mask)

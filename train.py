@@ -22,8 +22,8 @@ def main(
         save_loss_every: int = 100,
         num_samples: int = 4,
         num_workers: int = 8,
-        results_folder: str = './results/run_name',
-        milestone: int = None,
+        results_folder: str = './results/hpc',
+        milestone: int = 0,
         data_folder: str = '../terrain-ml/planetAI/data'
 ):
     planet_cfg = PlanetConfig(data_dir=data_folder)
@@ -68,7 +68,7 @@ def main(
             results_folder=results_folder,
             data_folder=data_folder)
 
-    if milestone:
+    if milestone is not None:
         trainer.load(milestone)
         
     trainer.train()
