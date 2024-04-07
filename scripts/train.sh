@@ -15,6 +15,7 @@ CUDA_VISIBLE_DEVICES=$(ncvd)
 
 module load python/miniconda3-py310
 source activate diffinf-a100
+pip install wandb
 
 # https://stackoverflow.com/questions/75921380/python-segmentation-fault-in-interactive-mode
 export LANGUAGE=UTF-8
