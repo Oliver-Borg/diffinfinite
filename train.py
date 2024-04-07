@@ -2,6 +2,12 @@ from fire import Fire
 import yaml
 from dm import Unet, GaussianDiffusion, Trainer
 from planetAI.src.data.utils import PlanetConfig
+import os
+import wandb
+if 'WANDB_API_KEY' in os.environ:
+    wandb.login(key=os.environ['WANDB_API_KEY'])
+else:
+    raise Exception("WANDB_API_KEY not found in environment variables. https://wandb.ai/authorize")
 
 def main(
         config_file: str = None,
@@ -26,6 +32,7 @@ def main(
         milestone: int = 0,
         data_folder: str = '../terrain-ml/planetAI/data'
 ):
+    wandb.init(project="PlanetAI", name="DiffInfinite")
     planet_cfg = PlanetConfig(data_dir=data_folder)
     num_classes = planet_cfg.combined_classes()
 

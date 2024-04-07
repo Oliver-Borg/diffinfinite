@@ -6,6 +6,8 @@ from functools import partial
 from collections import namedtuple
 from multiprocessing import cpu_count
 import os
+import wandb
+
 
 import numpy as np
 import torch
@@ -771,6 +773,11 @@ class Trainer(object):
                                  str(self.results_folder / f'sample-{milestone}.png'), 
                                  nrow = int(math.sqrt(self.num_samples)))
                 
+                wandb.log({"images": [wandb.Image(str(self.results_folder / f'images-{milestone}.png'))],
+                            "masks": [wandb.Image(str(self.results_folder / f'masks-{milestone}.png'))],
+                            "samples": [wandb.Image(str(self.results_folder / f'sample-{milestone}.png'))]})
+                
+                
                 self.save(0) # Changed this to make sure only one checkpoint file is saved (they are big)
 
     def train(self):
@@ -792,6 +799,7 @@ class Trainer(object):
                 if self.step % self.save_loss_every == 0:
                     self.running_loss.append(total_loss)
                     self.running_lr.append(self.scheduler.get_lr()[0])
+                    wandb.log({"loss": total_loss, "lr": self.scheduler.get_lr()[0]})
 
                 pbar.set_description(f'loss: {total_loss:.4f}')
 
